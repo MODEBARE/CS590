@@ -1,0 +1,137 @@
+Lab 5 – Part 1: Component Redesign of Webshop
+
+This document describes the component-based redesign of the webshop domain from the lab.
+
+Components and Their Classes
+----------------------------
+
+1. ProductCatalogComponent
+   Responsibility: Managing products and catalog information.
+
+   Classes inside:
+   - Product (entity)
+   - Stock (value object)
+   - Review (value object)
+   - Supplier (value object)
+   - ProductRepository (DAO)
+   - ProductService (service)
+
+   Provided interface (examples):
+   - addProduct(Product p)
+   - getProduct(String productNumber)
+   - getAllProducts()
+   - addReview(String productNumber, Review review)
+   - updateStock(String productNumber, Stock stock)
+
+   This component is used by ShoppingComponent and OrderComponent to read product data.
+
+2. ShoppingComponent
+   Responsibility: Managing the shopping cart and cart operations.
+
+   Classes inside:
+   - ShoppingCart (entity)
+   - CartLine (value object)
+   - ShoppingCartRepository (DAO)
+   - ShoppingCartService (service)
+
+   Provided interface (examples):
+   - addToShoppingCart(String cartId, String productNumber, int qty)
+   - getShoppingCart(String cartId)
+   - removeFromCart(String cartId, String productNumber)
+   - changeQuantity(String cartId, String productNumber, int qty)
+   - checkout(String cartId)
+
+   This component depends on ProductCatalogComponent to validate product information
+   and prices, and on CustomerComponent/OrderComponent during checkout.
+
+3. CustomerComponent
+   Responsibility: Maintaining customer profiles, addresses, and account data.
+
+   Classes inside:
+   - Customer (entity)
+   - Address (value object)
+   - CreditCard (value object)
+   - Account (value object)
+   - CustomerRepository (DAO)
+   - CustomerService (service)
+
+   Provided interface (examples):
+   - registerCustomer(Customer c)
+   - getCustomer(String customerNumber)
+   - getLoggedOnCustomer()
+   - updateAddress(...)
+
+   This component is used by ShoppingComponent (to associate carts with customers)
+   and by OrderComponent (for shipping/billing details).
+
+4. OrderComponent
+   Responsibility: Managing orders and order lifecycle.
+
+   Classes inside:
+   - Order (entity)
+   - OrderLine (value object)
+   - OrderRepository (DAO)
+   - OrderService (service)
+
+   Provided interface (examples):
+   - createOrder(ShoppingCart cart)
+   - setShippingAddress(String orderNumber, Address address)
+   - setBillingAddress(String orderNumber, Address address)
+   - setPayment(String orderNumber, CreditCard card)
+   - confirm(String orderNumber)
+
+   This component depends on ShoppingComponent (to transform a shopping cart into
+   an order) and CustomerComponent (for customer and address information).
+
+5. IntegrationComponent
+   Responsibility: Integrating with external systems.
+
+   Classes inside:
+   - EmailSender
+   - (optionally) PaymentGatewayClient, ShippingProviderClient, etc.
+
+   Provided interface (examples):
+   - send(String to, String subject, String body)
+
+   This component is used by OrderComponent or other components to send
+   confirmation emails or to talk to external services.
+
+6. PersistenceComponent (optional)
+   Responsibility: Centralized data access abstraction (if DAOs are not kept within
+   each business component).
+
+   Classes inside:
+   - CustomerRepository
+   - OrderRepository
+   - ProductRepository
+   - ShoppingCartRepository
+
+   Provided interface: CRUD operations for each aggregate.
+
+Component Relationships (high-level)
+------------------------------------
+
+- ShoppingComponent -> ProductCatalogComponent
+  Uses ProductService to retrieve product data when adding items to the cart.
+
+- ShoppingComponent -> CustomerComponent
+  Uses CustomerService to get the current customer when checking out.
+
+- OrderComponent -> ShoppingComponent
+  Uses ShoppingCartService to transform a shopping cart into an order.
+
+- OrderComponent -> CustomerComponent
+  Uses CustomerService to fetch addresses and payment details.
+
+- OrderComponent -> IntegrationComponent
+  Uses EmailSender (and other integration services) to send order confirmations
+  and notifications.
+
+- All business components -> PersistenceComponent
+  Use repositories/DAOs for data access, which internally use MongoDB (or another
+  persistence mechanism).
+
+Note:
+For the purposes of Part 2 of the lab, only a subset of the above components is
+actually implemented in code: ProductCatalogComponent and ShoppingComponent,
+backed by MongoDB and exposed via REST.
